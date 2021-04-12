@@ -3,6 +3,7 @@ use crate::config::log_schema;
 use bytes::Bytes;
 use chrono::Utc;
 use getset::Getters;
+use lookup::LookupBuf;
 use serde::{Serialize, Serializer};
 use shared::EventDataEq;
 use std::{
@@ -299,7 +300,7 @@ impl Serialize for LogEvent {
 }
 
 impl vrl::Target for LogEvent {
-    fn get(&self, path: &vrl::Path) -> Result<Option<vrl::Value>, String> {
+    fn get(&self, path: &LookupBuf) -> Result<Option<vrl::Value>, String> {
         if path.is_root() {
             let iter = self
                 .as_map()
@@ -320,7 +321,7 @@ impl vrl::Target for LogEvent {
         Ok(value)
     }
 
-    fn remove(&mut self, path: &vrl::Path, compact: bool) -> Result<Option<vrl::Value>, String> {
+    fn remove(&mut self, path: &LookupBuf, compact: bool) -> Result<Option<vrl::Value>, String> {
         if path.is_root() {
             return Ok(Some(
                 std::mem::take(&mut self.fields)
@@ -343,7 +344,7 @@ impl vrl::Target for LogEvent {
         Ok(None)
     }
 
-    fn insert(&mut self, path: &vrl::Path, value: vrl::Value) -> Result<(), String> {
+    fn insert(&mut self, path: &LookupBuf, value: vrl::Value) -> Result<(), String> {
         if path.is_root() {
             match value {
                 vrl::Value::Object(map) => {

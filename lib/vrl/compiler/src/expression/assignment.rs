@@ -3,8 +3,9 @@ use crate::parser::{
     ast::{self, Ident},
     Node,
 };
-use crate::{Context, Expression, Path, Span, State, TypeDef, Value};
+use crate::{Context, Expression, Span, State, TypeDef, Value};
 use diagnostic::{DiagnosticError, Label, Note};
+use lookup::LookupBuf;
 use std::convert::TryFrom;
 use std::fmt;
 
@@ -184,8 +185,8 @@ impl fmt::Debug for Assignment {
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub enum Target {
     Noop,
-    Internal(Ident, Option<Path>),
-    External(Option<Path>),
+    Internal(Ident, Option<LookupBuf>),
+    External(Option<LookupBuf>),
 }
 
 impl Target {
@@ -195,14 +196,14 @@ impl Target {
         fn set_type_def(
             current_type_def: &TypeDef,
             new_type_def: TypeDef,
-            path: &Option<Path>,
+            path: &Option<LookupBuf>,
         ) -> TypeDef {
             // If the assignment is into a specific index, we want to keep the
             // existing type def, and only update the type def at the provided
             // index.
             let is_index_assignment = path
                 .as_ref()
-                .and_then(|p| p.segments().last().map(|s| s.is_index()))
+                .and_then(|p| p.as_segments().iter().last().map(|s| s.is_index()))
                 .unwrap_or_default();
 
             if is_index_assignment {
@@ -274,7 +275,7 @@ impl Target {
             External(path) => {
                 let _ = ctx
                     .target_mut()
-                    .insert(path.as_ref().unwrap_or(&Path::root()), value);
+                    .insert(path.as_ref().unwrap_or(&LookupBuf::root()), value);
             }
         }
     }
